@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Symbl Web SDK example</title>
+  <script src="https://sdk.symbl.ai/js/beta/symbl-web-sdk/latest/symbl.min.js"></script>
+  <script>
+      // START changing values here.
+      
+      const appId = '73716f555a42464b6a4e7261467463663156515a7142434b7839747779737a47';
+      const appSecret = '374c3536594e534d30634542336f7872446e7553426c636531577074564e42755f7237474e2d4c7275624a6a5756756e6665535730665a79736d4b6138637a4f';
+
+      // STOP changing values here.
+
+      const start = async () => {
+
+      try {
+
+          // Symbl recommends replacing the App ID and App Secret with an Access Token for authentication in production applications.
+          // For more information about authentication see https://docs.symbl.ai/docs/developer-tools/authentication/.
+          const symbl = new Symbl({
+              appId: appId,
+              appSecret: appSecret,
+              // accessToken: '<your Access Token>' // for production use
+          });
+          
+          // Open a Streaming API WebSocket Connection and start processing audio from your input device.
+          const connection = await symbl.createAndStartNewConnection();
+
+          // Retrieve the conversation ID for the conversation.
+          connection.on("conversation_created", (conversationData) => {
+            const conversationId = conversationData.data.conversationId;
+            console.log(`${conversationId}`);
+            document.querySelector("#conversationId").innerHTML = `${conversationId}`;
+            document.querySelector("#startButton").setAttribute("disabled", "");
+          });
+
+          // Retrieve real-time transcription from the conversation.
+          connection.on("speech_recognition", (speechData) => {
+            const name = speechData.user ? speechData.user.name : "User";
+            const transcript = speechData.punctuated.transcript;
+            console.log(`${name}: `, transcript);
+            document.querySelector("#speechRecognition").innerHTML = `${name}: ${transcript}`;
+          });
+          
+          // This is a helper method for testing purposes.
+          // It waits 60 seconds before continuing to the next API call.
+          await Symbl.wait(60000);
+          
+          // Stops processing audio, but keeps the WebSocket connection open.
+          await connection.stopProcessing();
+          
+          // Closes the WebSocket connection.
+          connection.disconnect();
+
+          document.querySelector("#startButton").removeAttribute("disabled");
+      } catch(e) {
+          // Handle errors here.
+      }
+    }
+  </script>
+</head>
+
+<body>
+
+  <button id="startButton" onclick="javascript: start()">Start Processing</button>
+
+  <p><b>Conversation ID:</b> <span id="conversationId">None</span></p>
+
+  <p id="speechRecognition">Click <b>Start Processing</b> and begin speaking to see transcription. If prompted, allow access to your microphone. The page records for 60 seconds and then closes the connection.<br> <br> If nothing happens, check your <a href="https://platform.symbl.ai/#/home">Symbl.ai App ID and App Secret</a> in this HTML file on lines 10 and 11 respectively.</p>
+
+</body>
+
+</html>
